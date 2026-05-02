@@ -1,1 +1,318 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
 
+void main() {
+  runApp(const MiaApp());
+}
+
+// --- STATO GLOBALE (PERMANENTE NELLA SESSIONE) ---
+String titoloApp = "Collezione Mazzi";
+Color coloreAppBar = Colors.blueAccent;
+String? urlSfondoHome;
+
+Map<String, String> nomiMazzi = {
+  'PHANTOM': 'PHANTOM',
+  'N.F.T.': 'N.F.T.',
+  'Hatchery': 'Hatchery',
+  'Choise': 'Choise',
+};
+
+Map<String, Color> coloriMazzi = {
+  'PHANTOM': Colors.deepPurple,
+  'N.F.T.': Colors.orange,
+  'Hatchery': Colors.blueGrey,
+  'Choise': Colors.amber,
+};
+
+Map<String, String?> fotoMazzi = {
+  'PHANTOM': null,
+  'N.F.T.': null,
+  'Hatchery': null,
+  'Choise': null,
+};
+
+class MiaApp extends StatelessWidget {
+  const MiaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+      ),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: coloreAppBar),
+      home: const PaginaPrincipale(),
+    );
+  }
+}
+
+class PaginaPrincipale extends StatefulWidget {
+  const PaginaPrincipale({super.key});
+
+  @override
+  State<PaginaPrincipale> createState() => _PaginaPrincipaleState();
+}
+
+class _PaginaPrincipaleState extends State<PaginaPrincipale> {
+  int _tocchiTitolo = 0;
+
+  void _gestisciAccessoDev(BuildContext context) {
+    setState(() {
+      _tocchiTitolo++;
+      if (_tocchiTitolo == 5) {
+        _tocchiTitolo = 0;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PannelloSviluppatore()),
+        ).then((_) => setState(() {}));
+      }
+    });
+  }
+
+  Widget buildMazzo(BuildContext context, String chiave) {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, left: 8),
+              width: 220,
+              height: 130,
+              decoration: BoxDecoration(
+                color: coloriMazzi[chiave]!.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VisualizzatoreCarte(chiave: chiave),
+                  ),
+                );
+              },
+              child: Container(
+                width: 220,
+                height: 130,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: fotoMazzi[chiave] == null ? coloriMazzi[chiave] : Colors.black,
+                  image: fotoMazzi[chiave] != null 
+                      ? DecorationImage(image: NetworkImage(fotoMazzi[chiave]!), fit: BoxFit.cover)
+                      : null,
+                  boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 10, offset: Offset(0, 5))],
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: fotoMazzi[chiave] != null ? Colors.black.withValues(alpha: 0.3) : Colors.transparent,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        nomiMazzi[chiave]!,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                      ),
+                      const Text('10 CARTE', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(decoration: BoxDecoration(color: coloreAppBar), child: const Text('MENU', style: TextStyle(color: Colors.white, fontSize: 24))),
+            const ListTile(leading: Icon(Icons.collections), title: Text('Mazzi')),
+            const ListTile(leading: Icon(Icons.settings), title: Text('Impostazioni')),
+          ],
+        ),
+      ),
+      appBar: AppBar(
+        title: GestureDetector(onTap: () => _gestisciAccessoDev(context), child: Text(titoloApp)),
+        backgroundColor: coloreAppBar,
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: urlSfondoHome != null ? DecorationImage(image: NetworkImage(urlSfondoHome!), fit: BoxFit.cover) : null,
+          color: urlSfondoHome == null ? Colors.grey[100] : null,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Column(
+              children: [
+                buildMazzo(context, 'PHANTOM'),
+                buildMazzo(context, 'N.F.T.'),
+                buildMazzo(context, 'Hatchery'),
+                buildMazzo(context, 'Choise'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PannelloSviluppatore extends StatelessWidget {
+  const PannelloSviluppatore({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Pannello Sviluppatore'), backgroundColor: Colors.redAccent),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ListTile(
+            leading: const Icon(Icons.palette),
+            title: const Text('Gestione Colori e Nomi'),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GestioneMazzi())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.image),
+            title: const Text('Gestione Foto Mazzi'),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GestioneFoto())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.wallpaper),
+            title: const Text('Gestione HomePage (Sfondo e Titolo)'),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GestioneHome())),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GestioneMazzi extends StatefulWidget {
+  const GestioneMazzi({super.key});
+  @override
+  State<GestioneMazzi> createState() => _GestioneMazziState();
+}
+
+class _GestioneMazziState extends State<GestioneMazzi> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Colori e Nomi'), backgroundColor: Colors.redAccent),
+      body: ListView(
+        children: nomiMazzi.keys.map((chiave) {
+          return ListTile(
+            title: TextField(
+              decoration: InputDecoration(labelText: 'Nome $chiave'),
+              onChanged: (val) => setState(() => nomiMazzi[chiave] = val),
+            ),
+            trailing: CircleAvatar(backgroundColor: coloriMazzi[chiave]),
+            onTap: () {
+              setState(() => coloriMazzi[chiave] = (coloriMazzi[chiave] == Colors.black ? Colors.blue : Colors.black));
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class GestioneFoto extends StatefulWidget {
+  const GestioneFoto({super.key});
+  @override
+  State<GestioneFoto> createState() => _GestioneFotoState();
+}
+
+class _GestioneFotoState extends State<GestioneFoto> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Foto Mazzi'), backgroundColor: Colors.redAccent),
+      body: ListView(
+        children: fotoMazzi.keys.map((chiave) {
+          return ListTile(
+            title: TextField(
+              decoration: InputDecoration(labelText: 'URL Foto $chiave'),
+              onChanged: (val) => setState(() => fotoMazzi[chiave] = val.isEmpty ? null : val),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class GestioneHome extends StatefulWidget {
+  const GestioneHome({super.key});
+  @override
+  State<GestioneHome> createState() => _GestioneHomeState();
+}
+
+class _GestioneHomeState extends State<GestioneHome> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Gestione Home'), backgroundColor: Colors.redAccent),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              decoration: const InputDecoration(labelText: 'Titolo App'),
+              onChanged: (val) => setState(() => titoloApp = val),
+            ),
+            TextField(
+              decoration: const InputDecoration(labelText: 'URL Sfondo Home'),
+              onChanged: (val) => setState(() => urlSfondoHome = val.isEmpty ? null : val),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: () => setState(() => coloreAppBar = Colors.orange), child: const Text("Cambia Colore Barra")),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class VisualizzatoreCarte extends StatelessWidget {
+  final String chiave;
+  const VisualizzatoreCarte({super.key, required this.chiave});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(nomiMazzi[chiave]!), backgroundColor: coloriMazzi[chiave]),
+      body: PageView.builder(
+        itemCount: 10,
+        controller: PageController(viewportFraction: 0.8),
+        itemBuilder: (context, index) => Center(
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: coloriMazzi[chiave]!, width: 5),
+            ),
+            child: Center(child: Text('CARTA ${index + 1}', style: const TextStyle(fontSize: 24))),
+          ),
+        ),
+      ),
+    );
+  }
+}
